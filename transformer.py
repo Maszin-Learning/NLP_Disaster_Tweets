@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
-from transformers import BertTokenizer
+from transformers import BertTokenizer, BertModel
 from torch.utils.data import DataLoader, TensorDataset
 
 # load data
@@ -34,7 +34,7 @@ tokenizer = BertTokenizer.from_pretrained(model_name)
 
 train_text_toc = []
 test_text_toc = []
-
+'''
 for sentence in train_text:
     train_text_toc.append(tokenizer(sentence, 
                                     padding = "max_length", # if we want to pad some "zeroes" to make all sentences of equal length
@@ -58,3 +58,13 @@ for sentence in test_text:
 batch_size = 100
 
 data = DataLoader(TensorDataset(train_text_toc, train_target), shuffle = True, batch_size = batch_size)
+'''
+
+input = tokenizer(train_text[0], 
+                                    padding = "max_length", # if we want to pad some "zeroes" to make all sentences of equal length
+                                    max_length = 54,        # maximum length (in words) of sentence in train_data (I counted spaces)
+                                    truncation = True,      # if some word is actually longer, than it shall be cut
+                                    return_tensors = "pt") # we want to get pytorch tensors
+
+model = BertModel.from_pretrained(model_name)
+output = model(**input)
