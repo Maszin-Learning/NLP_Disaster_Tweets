@@ -172,7 +172,7 @@ def set_up():
         print (f"Using {device_}")
     else:
         print ("MPS device not found.")
-        device = torch.device("cpu")
+        device_ = torch.device("cpu")
         print (f"Using {device_}")
     return device_
 
