@@ -6,13 +6,11 @@ from torch import nn
 from torch.optim import Adam
 from tqdm import tqdm
 
-datapath = f'train_short.csv'
+datapath = f'train.csv'
 df = pd.read_csv(datapath)
 df.head()
 
 df.drop(columns = ["keyword", "id", "location"], inplace = True)
-
-
 #df.groupby(['category']).size().plot.bar()
 
 tokenizer = BertTokenizer.from_pretrained('bert-base-cased')
@@ -24,7 +22,7 @@ class Dataset(torch.utils.data.Dataset):
 
         self.labels = [x for x in df['target']]
         self.texts = [tokenizer(text, 
-                               padding='max_length', max_length = 512, truncation=True,
+                               padding='max_length', max_length = 50, truncation=True,
                                 return_tensors="pt") for text in df['text']]
 
     def classes(self):
@@ -62,29 +60,25 @@ class BertClassifier(nn.Module):
     def forward(self, input_id, mask):
 
         _, pooled_output = self.bert(input_ids= input_id, attention_mask=mask,return_dict=False)
+        #print(_)
         dropout_output = self.dropout(pooled_output)
         linear_output = self.linear(dropout_output)
         final_layer = self.relu(linear_output)
 
         return final_layer
 
-def train(model, train_data, val_data, learning_rate, epochs):
+def train(model, train_data, val_data, learning_rate, epochs, device_):
 
     train, val = Dataset(train_data), Dataset(val_data)
 
-    train_dataloader = torch.utils.data.DataLoader(train, batch_size=2, shuffle=True)
-    val_dataloader = torch.utils.data.DataLoader(val, batch_size=2)
-
-    use_cuda = torch.cuda.is_available()
-    device = torch.device("cuda" if use_cuda else "cpu")
-
+    train_dataloader = torch.utils.data.DataLoader(train, batch_size=64, shuffle=True)
+    val_dataloader = torch.utils.data.DataLoader(val, batch_size=32)
+    
     criterion = nn.CrossEntropyLoss()
     optimizer = Adam(model.parameters(), lr= learning_rate)
 
-    if use_cuda:
-
-            model = model.cuda()
-            criterion = criterion.cuda()
+    model = model.to(device_)
+    criterion = criterion.to(device_)
 
     for epoch_num in range(epochs):
 
@@ -93,9 +87,9 @@ def train(model, train_data, val_data, learning_rate, epochs):
 
             for train_input, train_label in tqdm(train_dataloader):
 
-                train_label = train_label.to(device)
-                mask = train_input['attention_mask'].to(device)
-                input_id = train_input['input_ids'].squeeze(1).to(device)
+                train_label = train_label.to(device_)
+                mask = train_input['attention_mask'].to(device_)
+                input_id = train_input['input_ids'].squeeze(1).to(device_)
 
                 output = model(input_id, mask)
                 
@@ -116,9 +110,9 @@ def train(model, train_data, val_data, learning_rate, epochs):
 
                 for val_input, val_label in val_dataloader:
 
-                    val_label = val_label.to(device)
-                    mask = val_input['attention_mask'].to(device)
-                    input_id = val_input['input_ids'].squeeze(1).to(device)
+                    val_label = val_label.to(device_)
+                    mask = val_input['attention_mask'].to(device_)
+                    input_id = val_input['input_ids'].squeeze(1).to(device_)
 
                     output = model(input_id, mask)
 
@@ -127,32 +121,32 @@ def train(model, train_data, val_data, learning_rate, epochs):
                     
                     acc = (output.argmax(dim=1) == val_label).sum().item()
                     total_acc_val += acc
-            
+            print(len(train_data))
+            print(len(val_data))
             print(
-                f'Epochs: {epoch_num + 1} | Train Loss: {total_loss_train / len(train_data): .3f} | Train Accuracy: {total_acc_train / len(train_data): .3f} | Val Loss: {total_loss_val / len(val_data): .3f} | Val Accuracy: {total_acc_val / len(val_data): .3f}')
+                f'Epochs: {epoch_num + 1}\
+                    | Train Loss: {total_loss_train / len(train_data): .3f}\
+                    | Train Accuracy: {total_acc_train / len(train_data): .3f}\
+                    | Val Loss: {total_loss_val / len(val_data): .3f}\
+                    | Val Accuracy: {total_acc_val / len(val_data): .3f}')
 
 
-def evaluate(model, test_data):
+def evaluate(model, test_data, device_):
 
     test = Dataset(test_data)
 
-    test_dataloader = torch.utils.data.DataLoader(test, batch_size=2)
+    test_dataloader = torch.utils.data.DataLoader(test, batch_size=16)
 
-    use_cuda = torch.cuda.is_available()
-    device = torch.device("cuda" if use_cuda else "cpu")
-
-    if use_cuda:
-
-        model = model.cuda()
+    model = model.to(device_)
 
     total_acc_test = 0
     with torch.no_grad():
 
         for test_input, test_label in test_dataloader:
 
-              test_label = test_label.to(device)
-              mask = test_input['attention_mask'].to(device)
-              input_id = test_input['input_ids'].squeeze(1).to(device)
+              test_label = test_label.to(device_)
+              mask = test_input['attention_mask'].to(device_)
+              input_id = test_input['input_ids'].squeeze(1).to(device_)
 
               output = model(input_id, mask)
 
@@ -162,24 +156,43 @@ def evaluate(model, test_data):
     print(f'Test Accuracy: {total_acc_test / len(test_data): .3f}')
     
 
+def set_up():
+    if torch.cuda.is_available():
+        device_ = torch.device("cuda")
+        print (f"Using {device_}")
+        #Checking GPU RAM allocated memory
+        print('allocated CUDA memory: ',torch.cuda.memory_allocated())
+        print('cached CUDA memory: ',torch.cuda.memory_cached())
+        torch.cuda.empty_cache() # clear CUDA memory
+        torch.backends.cudnn.benchmark = True #let cudnn chose the most efficient way of calculating Convolutions
+        
+    elif torch.backends.mps.is_available():
+        print ("CUDA device not found.")
+        device_ = torch.device("mps")
+        print (f"Using {device_}")
+    else:
+        print ("MPS device not found.")
+        device = torch.device("cpu")
+        print (f"Using {device_}")
+    return device_
 
-np.random.seed(112)
-df_train, df_val, df_test = np.split(df.sample(frac=1, random_state=42), 
-                                     [int(.8*len(df)), int(.9*len(df))])
 
-print(len(df_train),len(df_val), len(df_test))
+def main():
+    np.random.seed(112)
+    sample = df.sample(frac=0.2, random_state=42)
+    df_train, df_val, df_test = np.split(sample, 
+                                        [int(.8*len(sample)), int(.9*len(sample))])
+    print(len(df_train),len(df_val), len(df_test))
+    device=set_up()
 
+    #Hyperparamiters
+    EPOCHS = 10
+    model = BertClassifier()
+    LR = 1e-6
+        
+    train(model, df_train, df_val, LR, EPOCHS, device)
+    evaluate(model, df_test, device)
 
-
-EPOCHS = 1
-model = BertClassifier()
-LR = 1e-6
-              
-train(model, df_train, df_val, LR, EPOCHS)
-
-
-
-evaluate(model, df_test)
-
+main()
 
                  
