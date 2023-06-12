@@ -25,26 +25,11 @@ class Dataset(torch.utils.data.Dataset):
                                padding='max_length', max_length = 50, truncation=True,
                                 return_tensors="pt") for text in df['text']]
 
-    def classes(self):
-        return self.labels
-
     def __len__(self):
         return len(self.labels)
 
-    def get_batch_labels(self, idx):
-        # Fetch a batch of labels
-        return np.array(self.labels[idx])
-
-    def get_batch_texts(self, idx):
-        # Fetch a batch of inputs
-        return self.texts[idx]
-
     def __getitem__(self, idx):
-
-        batch_texts = self.get_batch_texts(idx)
-        batch_y = self.get_batch_labels(idx)
-
-        return batch_texts, batch_y
+        return self.texts[idx], np.array(self.labels[idx])  
     
 class BertClassifier(nn.Module):
 
@@ -60,7 +45,8 @@ class BertClassifier(nn.Module):
     def forward(self, input_id, mask):
 
         _, pooled_output = self.bert(input_ids= input_id, attention_mask=mask,return_dict=False)
-        #print(_)
+        print(pooled_output)
+        print(pooled_output.shape)
         dropout_output = self.dropout(pooled_output)
         linear_output = self.linear(dropout_output)
         final_layer = self.relu(linear_output)
@@ -71,8 +57,9 @@ def train(model, train_data, val_data, learning_rate, epochs, device_):
 
     train, val = Dataset(train_data), Dataset(val_data)
 
-    train_dataloader = torch.utils.data.DataLoader(train, batch_size=64, shuffle=True)
-    val_dataloader = torch.utils.data.DataLoader(val, batch_size=32)
+    train_dataloader = torch.utils.data.DataLoader(train, batch_size=1, shuffle=True)
+    val_dataloader = torch.utils.data.DataLoader(val, batch_size=1)
+    
     
     criterion = nn.CrossEntropyLoss()
     optimizer = Adam(model.parameters(), lr= learning_rate)
@@ -135,7 +122,7 @@ def evaluate(model, test_data, device_):
 
     test = Dataset(test_data)
 
-    test_dataloader = torch.utils.data.DataLoader(test, batch_size=16)
+    test_dataloader = torch.utils.data.DataLoader(test, batch_size=1)
 
     model = model.to(device_)
 
