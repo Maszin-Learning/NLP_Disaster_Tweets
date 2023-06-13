@@ -315,7 +315,7 @@ def set_up():
 if __name__ == "__main__":
     
     device = set_up()
-    device = torch.device('cpu')
+    device = torch.device('cpu') #temporary use cpu
     tokenizer = BertTokenizer.from_pretrained('bert-base-cased')
     
     #data processing
