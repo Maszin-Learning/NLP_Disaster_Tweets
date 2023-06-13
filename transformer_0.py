@@ -287,7 +287,26 @@ class Dataset(torch.utils.data.Dataset): #dodać labele
         return self.texts[idx]
 
 
-#dodac set_up
+#define device
+def set_up():
+    if torch.cuda.is_available():
+        device_ = torch.device("cuda")
+        print (f"Using {device_}")
+        #Checking GPU RAM allocated memory
+        print('allocated CUDA memory: ',torch.cuda.memory_allocated())
+        print('cached CUDA memory: ',torch.cuda.memory_cached())
+        torch.cuda.empty_cache() # clear CUDA memory
+        torch.backends.cudnn.benchmark = True #let cudnn chose the most efficient way of calculating Convolutions
+        
+    elif torch.backends.mps.is_available():
+        print ("CUDA device not found.")
+        device_ = torch.device("mps")
+        print (f"Using {device_}")
+    else:
+        print ("MPS device not found.")
+        device_ = torch.device("cpu")
+        print (f"Using {device_}")
+    return device_
 
 #dodać learning loop
 #dodać eval loop
