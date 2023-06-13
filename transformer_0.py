@@ -306,16 +306,32 @@ def set_up():
         print (f"Using {device_}")
     return device_
 
+#dodać learning loop
 def train(model, train_data, test_data, learning_rate, epochs, device, batch_size):
 
     train, test = Dataset(train_data), Dataset(test_data)
     train_dataloader = torch.utils.data.DataLoader(train, batch_size=batch_size, shuffle=True)
     test_dataloader = torch.utils.data.DataLoader(test, batch_size=batch_size)
 
-#dodać learning loop
+
+# Network class
+class NET(nn.Module):
+    def __init__(self,input_size,output_size, dropout=0.5):
+        # super function. It inherits from nn.Module and we can access everything in nn.Module
+        super(NET,self).__init__()
+        # Linear function.
+        self.linear = nn.Linear(input_size,output_size)
+        # dropout layer
+        self.dropout = nn.Dropout(dropout)
+        self.relu = nn.ReLU()
+
+    def forward(self, x):
+        dropout_output = self.dropout(x)
+        linear_output = self.linear(dropout_output)
+        final_layer = self.relu(linear_output)
+        return final_layer
+
 #dodać eval loop
-
-
 if __name__ == "__main__":
     
     device = set_up()
