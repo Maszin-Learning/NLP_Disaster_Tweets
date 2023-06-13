@@ -309,6 +309,7 @@ def set_up():
         print (f"Using {device_}")
     return device_
 
+#dodać learning loop
 def train(model, train_data, test_data, learning_rate, epochs, device, batch_size):
 
     device = set_up()
@@ -374,9 +375,28 @@ def train(model, train_data, test_data, learning_rate, epochs, device, batch_siz
                     | Val Loss: {total_loss_val / len(test): .3f}\
                     | Val Accuracy: {total_acc_val / len(test): .3f}')
 
+# Network class
+class NET(nn.Module):
+    def __init__(self,input_size,output_size, dropout=0.5):
+        # super function. It inherits from nn.Module and we can access everything in nn.Module
+        super(NET,self).__init__()
+        # Linear function.
+        self.linear = nn.Linear(input_size,output_size)
+        # dropout layer
+        self.dropout = nn.Dropout(dropout)
+        self.relu = nn.ReLU()
+
+    def forward(self, x):
+        dropout_output = self.dropout(x)
+        linear_output = self.linear(dropout_output)
+        final_layer = self.relu(linear_output)
+        return final_layer
+
+#dodać eval loop
 if __name__ == "__main__":
     
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    device = set_up()
+    device = torch.device('cpu') #temporary use cpu
     tokenizer = BertTokenizer.from_pretrained('bert-base-cased')
     
     #data processing
@@ -402,9 +422,10 @@ if __name__ == "__main__":
     trg_pad_idx = 0
     src_vocab_size = 5000
     trg_vocab_size = 5000
+    #dodac długośc tych słowników/zdań wszystkich itd
     
     #model
-    model = Transformer(src_vocab_size, trg_vocab_size, src_pad_idx, trg_pad_idx, device=device).to(device)
+    model = Transformer(src_vocab_size, trg_vocab_size, src_pad_idx, trg_pad_idx, device=device)
     out = model(x, x[:, :-1])
     
     
