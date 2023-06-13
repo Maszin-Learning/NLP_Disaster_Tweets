@@ -266,7 +266,7 @@ class Transformer(nn.Module):
         return out
     
     
-class Dataset(torch.utils.data.Dataset): #dodać labele
+class Dataset(torch.utils.data.Dataset):
 
     def __init__(self, df):
 
@@ -278,14 +278,12 @@ class Dataset(torch.utils.data.Dataset): #dodać labele
         
         self.texts = [torch.cat([ torch.tensor([1]), i['input_ids'][0], torch.tensor([0])], dim=0) for i in self.texts]
         self.texts = [torch.unsqueeze(x,0)  for x in self.texts] 
-        print(self.texts[0])
 
     def __len__(self):
         return len(self.labels)
 
     def __getitem__(self, idx):
-        return self.texts[idx]
-
+        return self.texts[idx], self.labels[idx]
 
 #define device
 def set_up():
@@ -307,6 +305,12 @@ def set_up():
         device_ = torch.device("cpu")
         print (f"Using {device_}")
     return device_
+
+def train(model, train_data, test_data, learning_rate, epochs, device, batch_size):
+
+    train, test = Dataset(train_data), Dataset(test_data)
+    train_dataloader = torch.utils.data.DataLoader(train, batch_size=batch_size, shuffle=True)
+    test_dataloader = torch.utils.data.DataLoader(test, batch_size=batch_size)
 
 #dodać learning loop
 #dodać eval loop
