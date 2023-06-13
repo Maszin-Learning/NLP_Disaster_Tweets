@@ -3,6 +3,9 @@ import torch.nn as nn
 import pandas as pd
 import numpy as np
 from transformers import BertTokenizer, BertModel
+from torch.optim import Adam
+from tqdm import tqdm
+
 
 
 class SelfAttention(nn.Module):
@@ -308,13 +311,68 @@ def set_up():
 
 def train(model, train_data, test_data, learning_rate, epochs, device, batch_size):
 
+    device = set_up()
     train, test = Dataset(train_data), Dataset(test_data)
     train_dataloader = torch.utils.data.DataLoader(train, batch_size=batch_size, shuffle=True)
     test_dataloader = torch.utils.data.DataLoader(test, batch_size=batch_size)
 
-#dodać learning loop
-#dodać eval loop
+    criterion = nn.CrossEntropyLoss()
+    optimizer = Adam(model.parameters(), lr = learning_rate)
 
+    model = model.to(device)
+    criterion = criterion.to(device)
+
+    for epoch_num in range(epochs):
+
+            total_acc_train = 0
+            total_loss_train = 0
+
+            for input, output in tqdm(train_dataloader):
+
+                # change device
+                output = output.to(device)
+                input = input.to(device)
+
+                # throw input into model
+                output = model(input, input[:, :-1])
+                batch_loss = criterion(output, output.long())
+
+                # calculate accuracy
+                total_loss_train += batch_loss.item()
+                acc = (output.argmax(dim=1) == output).sum().item()
+                total_acc_train += acc
+
+                # calculate gradient and update weights
+                model.zero_grad()
+                batch_loss.backward()
+                optimizer.step()
+            
+            total_acc_val = 0
+            total_loss_val = 0
+
+            with torch.no_grad():
+
+                for val_input, val_target in test_dataloader:
+                    
+                    #change device
+                    val_input = val_input.to(device)
+                    val_target = val_target.to(device)
+
+                    # throw input into model
+                    output = model(val_input, val_input[])
+                    batch_loss = criterion(output, val_target.long())
+
+                    # calculate accuracy
+                    total_loss_val += batch_loss.item()
+                    acc = (output.argmax(dim=1) == val_target).sum().item()
+                    total_acc_val += acc
+
+            print(
+                f'Epochs: {epoch_num + 1}\
+                    | Train Loss: {total_loss_train / len(train_data): .3f}\
+                    | Train Accuracy: {total_acc_train / len(train_data): .3f}\
+                    | Val Loss: {total_loss_val / len(test): .3f}\
+                    | Val Accuracy: {total_acc_val / len(test): .3f}')
 
 if __name__ == "__main__":
     
