@@ -249,7 +249,11 @@ class Transformer(nn.Module):
         self.device = device
 
     def make_src_mask(self, src):
-        src_mask = (src != self.src_pad_idx).unsqueeze(1).unsqueeze(2)
+        print(src)
+        print(self.src_pad_idx)
+        src_mask = (src != self.src_pad_idx)
+        print(src_mask)
+        src_mask=src_mask.unsqueeze(1).unsqueeze(2)
         # (N, 1, 1, src_len)
         return src_mask.to(self.device)
 

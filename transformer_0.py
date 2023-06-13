@@ -274,7 +274,7 @@ class Dataset(torch.utils.data.Dataset):
         self.labels = [x for x in df['target']]
         
         self.texts = [tokenizer(text, 
-                    padding='max_length', max_length = 20, truncation=True,
+                    padding='max_length', max_length = 10, truncation=True,
                     return_tensors="pt") for text in df['text']]
         
         self.texts = [torch.cat([ torch.tensor([1]), i['input_ids'][0], torch.tensor([0])], dim=0) for i in self.texts]
@@ -325,7 +325,7 @@ if __name__ == "__main__":
     trg_vocab_size = 50000
     
     
-    trg = x[:-1]
+    trg = x[:, :-1]
     model = Transformer(src_vocab_size, trg_vocab_size, src_pad_idx, trg_pad_idx, device=device).to(device)
     out = model(x, trg)
     
