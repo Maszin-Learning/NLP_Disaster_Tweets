@@ -245,7 +245,6 @@ class Transformer(nn.Module):
 
     def make_src_mask(self, src):
         src_mask = (src != self.src_pad_idx)
-        print(src_mask)
         src_mask=src_mask.unsqueeze(1).unsqueeze(2)
         # (N, 1, 1, src_len)
         return src_mask.to(self.device)
@@ -267,7 +266,7 @@ class Transformer(nn.Module):
         return out
     
     
-class Dataset(torch.utils.data.Dataset):
+class Dataset(torch.utils.data.Dataset): #dodać labele
 
     def __init__(self, df):
 
@@ -286,19 +285,26 @@ class Dataset(torch.utils.data.Dataset):
 
     def __getitem__(self, idx):
         return self.texts[idx]
-    #np.array(self.labels[idx]) 
+
+
+#dodac set_up
+
+#dodać learning loop
+#dodać eval loop
 
 
 if __name__ == "__main__":
+    
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    tokenizer = BertTokenizer.from_pretrained('bert-base-cased')
+    
+    #data processing
     datapath = f'train.csv'
     df = pd.read_csv(datapath)
     df.head()
-
     df.drop(columns = ["keyword", "id", "location"], inplace = True)
-    #df.groupby(['category']).size().plot.bar()
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    print(device)
-    tokenizer = BertTokenizer.from_pretrained('bert-base-cased')
+    
+    #data split
     np.random.seed(112)
     sample = df.sample(frac=0.2, random_state=42)
     df_train, df_val, df_test = np.split(sample, 
@@ -306,28 +312,19 @@ if __name__ == "__main__":
     print(len(df_train),len(df_val), len(df_test))
     
     
-    
+    #data
     dataset = Dataset(df_train)
-    print(dataset[0])
-    
-    
-    """    x = torch.tensor([[1, 5, 6, 4, 3, 9, 5, 2, 0]]).to(
-        device
-    )
-    trg = torch.tensor([[1, 7, 4, 3, 5, 9, 2, 0]]).to(device)
-    """
-
     x = dataset[0]
     
+    #hyperparameters
     src_pad_idx = 0
     trg_pad_idx = 0
-    src_vocab_size = 50000
-    trg_vocab_size = 50000
+    src_vocab_size = 5000
+    trg_vocab_size = 5000
     
-    
-    trg = x[:, :-1]
+    #model
     model = Transformer(src_vocab_size, trg_vocab_size, src_pad_idx, trg_pad_idx, device=device).to(device)
-    out = model(x, trg)
+    out = model(x, x[:, :-1])
     
     
 
