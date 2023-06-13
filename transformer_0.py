@@ -2,6 +2,7 @@ import torch
 import torch.nn as nn
 import pandas as pd
 import numpy as np
+from transformers import BertTokenizer, BertModel
 
 
 class SelfAttention(nn.Module):
@@ -243,9 +244,12 @@ class Transformer(nn.Module):
         self.device = device
 
     def make_src_mask(self, src):
-        src_mask = (src != self.src_pad_idx).unsqueeze(1).unsqueeze(2)
+        src_mask = (src != self.src_pad_idx)
+        print(src_mask)
+        src_mask=src_mask.unsqueeze(1).unsqueeze(2)
         # (N, 1, 1, src_len)
         return src_mask.to(self.device)
+
 
     def make_trg_mask(self, trg):
         N, trg_len = trg.shape
@@ -268,7 +272,14 @@ class Dataset(torch.utils.data.Dataset):
     def __init__(self, df):
 
         self.labels = [x for x in df['target']]
-        self.texts = [[1] + text.split() + [0] for text in df['text']] 
+        
+        self.texts = [tokenizer(text, 
+                    padding='max_length', max_length = 20, truncation=True,
+                    return_tensors="pt") for text in df['text']]
+        
+        self.texts = [torch.cat([ torch.tensor([1]), i['input_ids'][0], torch.tensor([0])], dim=0) for i in self.texts]
+        self.texts = [torch.unsqueeze(x,0)  for x in self.texts] 
+        print(self.texts[0])
 
     def __len__(self):
         return len(self.labels)
@@ -287,15 +298,18 @@ if __name__ == "__main__":
     #df.groupby(['category']).size().plot.bar()
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(device)
-    
+    tokenizer = BertTokenizer.from_pretrained('bert-base-cased')
     np.random.seed(112)
     sample = df.sample(frac=0.2, random_state=42)
     df_train, df_val, df_test = np.split(sample, 
                                     [int(.8*len(sample)), int(.9*len(sample))])
     print(len(df_train),len(df_val), len(df_test))
     
+    
+    
     dataset = Dataset(df_train)
     print(dataset[0])
+    
     
     """    x = torch.tensor([[1, 5, 6, 4, 3, 9, 5, 2, 0]]).to(
         device
@@ -304,17 +318,16 @@ if __name__ == "__main__":
     """
 
     x = dataset[0]
-    trg = x[:-1]
+    
     src_pad_idx = 0
     trg_pad_idx = 0
-    src_vocab_size = 10
-    trg_vocab_size = 10
-    model = Transformer(src_vocab_size, trg_vocab_size, src_pad_idx, trg_pad_idx, device=device).to(
-        device
-    )
+    src_vocab_size = 50000
+    trg_vocab_size = 50000
+    
+    
+    trg = x[:-1]
+    model = Transformer(src_vocab_size, trg_vocab_size, src_pad_idx, trg_pad_idx, device=device).to(device)
     out = model(x, trg)
-    print(out.shape)
-    print(out)
     
     
 
