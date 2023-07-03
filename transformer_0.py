@@ -360,7 +360,7 @@ def train(model, train_data, test_data, learning_rate, epochs, device, batch_siz
                     val_target = val_target.to(device)
 
                     # throw input into model
-                    output = model(val_input, val_input[])
+                    output = model(val_input, val_input[:, :-1])
                     batch_loss = criterion(output, val_target.long())
 
                     # calculate accuracy
@@ -415,7 +415,7 @@ if __name__ == "__main__":
     
     #data
     dataset = Dataset(df_train)
-    x = dataset[0]
+    x = dataset[0][0]
     
     #hyperparameters
     src_pad_idx = 0
