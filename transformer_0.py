@@ -244,10 +244,7 @@ class Transformer(nn.Module):
         self.device = device
 
     def make_src_mask(self, src):
-        print(src)
-        print(self.src_pad_idx)
         src_mask = (src != self.src_pad_idx)
-        print(src_mask)
         src_mask=src_mask.unsqueeze(1).unsqueeze(2)
         # (N, 1, 1, src_len)
         return src_mask.to(self.device)
@@ -286,7 +283,7 @@ class Dataset(torch.utils.data.Dataset):
         return len(self.labels)
 
     def __getitem__(self, idx):
-        return self.texts[idx]#, self.labels[idx]
+        return self.texts[idx], self.labels[idx]
 
 #define device
 def set_up():
@@ -341,7 +338,8 @@ if __name__ == "__main__":
     
     #data
     dataset = Dataset(df_train)
-    x = dataset[0]
+    y = dataset[0][1]
+    x = dataset[0][0]
     
     #hyperparameters
     src_pad_idx = 0
