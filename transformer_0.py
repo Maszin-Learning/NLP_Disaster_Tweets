@@ -310,7 +310,7 @@ def set_up():
     return device_
 
 #dodać learning loop
-def train(model, train_data, test_data, learning_rate, epochs, device, batch_size):
+def train(model, net, train_data, test_data, learning_rate, epochs, device, batch_size):
 
     device = set_up()
     train, test = Dataset(train_data), Dataset(test_data)
@@ -336,7 +336,8 @@ def train(model, train_data, test_data, learning_rate, epochs, device, batch_siz
 
                 # throw input into model
                 output = model(input, input[:, :-1])
-                batch_loss = criterion(output, output.long())
+                net_output=net(torch.flatten(output))
+                batch_loss = criterion(net_output, output.long())
 
                 # calculate accuracy
                 total_loss_train += batch_loss.item()
@@ -381,15 +382,19 @@ class NET(nn.Module):
         # super function. It inherits from nn.Module and we can access everything in nn.Module
         super(NET,self).__init__()
         # Linear function.
-        self.linear = nn.Linear(input_size,output_size)
+        self.linear_0 = nn.Linear(input_size,10000)
+        self.linear_1 = nn.Linear(10000, 1000)
+        self.linear_2 = nn.Linear(1000,output_size)
         # dropout layer
         self.dropout = nn.Dropout(dropout)
         self.relu = nn.ReLU()
 
     def forward(self, x):
-        dropout_output = self.dropout(x)
-        linear_output = self.linear(dropout_output)
-        final_layer = self.relu(linear_output)
+        x = self.linear_0(x)
+        x = self.dropout(x)
+        x = self.linear_1(x)
+        x = self.linear_2(x)
+        final_layer = self.relu(x)
         return final_layer
 
 #dodać eval loop
@@ -428,10 +433,13 @@ if __name__ == "__main__":
     
     #model
     model = Transformer(src_vocab_size, trg_vocab_size, src_pad_idx, trg_pad_idx, device=device)
- 
+    net = NET(55000,1)
     out = model(x, x[:,:-1])
+    net_output=net(torch.flatten(out))
+    print('TEST COMPLETED')
     
     
+    train(model=model, net=net, train_data=df_train, test_data=df_test, learning_rate=1e-5, epochs=1, device=device, batch_size=1)
 
 
 
