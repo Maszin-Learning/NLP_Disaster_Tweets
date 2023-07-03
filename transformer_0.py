@@ -416,7 +416,7 @@ if __name__ == "__main__":
     #data
     dataset = Dataset(df_train)
     x = dataset[0][0]
-    
+    print(dataset[0])
     #hyperparameters
     src_pad_idx = 0
     trg_pad_idx = 0
