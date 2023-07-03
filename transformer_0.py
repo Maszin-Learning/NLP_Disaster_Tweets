@@ -353,7 +353,7 @@ if __name__ == "__main__":
     #model
     model = Transformer(src_vocab_size, trg_vocab_size, src_pad_idx, trg_pad_idx, device=device)
  
-    out = model(x, x[-1])
+    out = model(x, x[:,:-1])
     
     
 
