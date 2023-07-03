@@ -3,6 +3,9 @@ import torch.nn as nn
 import pandas as pd
 import numpy as np
 from transformers import BertTokenizer, BertModel
+from torch.optim import Adam
+from tqdm import tqdm
+
 
 
 class SelfAttention(nn.Module):
@@ -306,16 +309,90 @@ def set_up():
         print (f"Using {device_}")
     return device_
 
+#dodać learning loop
 def train(model, train_data, test_data, learning_rate, epochs, device, batch_size):
 
+    device = set_up()
     train, test = Dataset(train_data), Dataset(test_data)
     train_dataloader = torch.utils.data.DataLoader(train, batch_size=batch_size, shuffle=True)
     test_dataloader = torch.utils.data.DataLoader(test, batch_size=batch_size)
 
-#dodać learning loop
+    criterion = nn.CrossEntropyLoss()
+    optimizer = Adam(model.parameters(), lr = learning_rate)
+
+    model = model.to(device)
+    criterion = criterion.to(device)
+
+    for epoch_num in range(epochs):
+
+            total_acc_train = 0
+            total_loss_train = 0
+
+            for input, output in tqdm(train_dataloader):
+
+                # change device
+                output = output.to(device)
+                input = input.to(device)
+
+                # throw input into model
+                output = model(input, input[:, :-1])
+                batch_loss = criterion(output, output.long())
+
+                # calculate accuracy
+                total_loss_train += batch_loss.item()
+                acc = (output.argmax(dim=1) == output).sum().item()
+                total_acc_train += acc
+
+                # calculate gradient and update weights
+                model.zero_grad()
+                batch_loss.backward()
+                optimizer.step()
+            
+            total_acc_val = 0
+            total_loss_val = 0
+
+            with torch.no_grad():
+
+                for val_input, val_target in test_dataloader:
+                    
+                    #change device
+                    val_input = val_input.to(device)
+                    val_target = val_target.to(device)
+
+                    # throw input into model
+                    output = model(val_input, val_input[:, :-1])
+                    batch_loss = criterion(output, val_target.long())
+
+                    # calculate accuracy
+                    total_loss_val += batch_loss.item()
+                    acc = (output.argmax(dim=1) == val_target).sum().item()
+                    total_acc_val += acc
+
+            print(
+                f'Epochs: {epoch_num + 1}\
+                    | Train Loss: {total_loss_train / len(train_data): .3f}\
+                    | Train Accuracy: {total_acc_train / len(train_data): .3f}\
+                    | Val Loss: {total_loss_val / len(test): .3f}\
+                    | Val Accuracy: {total_acc_val / len(test): .3f}')
+
+# Network class
+class NET(nn.Module):
+    def __init__(self,input_size,output_size, dropout=0.5):
+        # super function. It inherits from nn.Module and we can access everything in nn.Module
+        super(NET,self).__init__()
+        # Linear function.
+        self.linear = nn.Linear(input_size,output_size)
+        # dropout layer
+        self.dropout = nn.Dropout(dropout)
+        self.relu = nn.ReLU()
+
+    def forward(self, x):
+        dropout_output = self.dropout(x)
+        linear_output = self.linear(dropout_output)
+        final_layer = self.relu(linear_output)
+        return final_layer
+
 #dodać eval loop
-
-
 if __name__ == "__main__":
     
     device = set_up()
@@ -338,6 +415,7 @@ if __name__ == "__main__":
     
     #data
     dataset = Dataset(df_train)
+    x = dataset[0][0]
     y = dataset[0][1]
     x = dataset[0][0]
     
