@@ -416,7 +416,9 @@ if __name__ == "__main__":
     #data
     dataset = Dataset(df_train)
     x = dataset[0][0]
-    print(dataset[0])
+    y = dataset[0][1]
+    x = dataset[0][0]
+    
     #hyperparameters
     src_pad_idx = 0
     trg_pad_idx = 0
@@ -426,7 +428,8 @@ if __name__ == "__main__":
     
     #model
     model = Transformer(src_vocab_size, trg_vocab_size, src_pad_idx, trg_pad_idx, device=device)
-    out = model(x, x[:, :-1])
+ 
+    out = model(x, x[:,:-1])
     
     
 
