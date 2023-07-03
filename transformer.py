@@ -2,7 +2,7 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 from transformers import BertTokenizer, BertModel
-from torch.utils.data import DataLoader, TensorDataset
+from torch.utils.data import DataLoader, TensorDataset, DataSet
 
 # load data
 
@@ -16,6 +16,8 @@ samples = pd.read_csv("sample_submission.csv") # how data we send to Kaggle shou
 
 train_data.drop(columns = ["keyword", "id", "location"], inplace = True)
 test_data.drop(columns = ["keyword", "id", "location"], inplace = True)
+
+train_short = train_data.drop(train_data.index[100:], inplace = False)
 
 # train data consist out of 7613 observations, including 4342 zeroes (false alarm) and 3271 ones (boooom)
 # test data consist out of 3261 observation
@@ -34,7 +36,6 @@ tokenizer = BertTokenizer.from_pretrained(model_name)
 
 train_text_toc = []
 test_text_toc = []
-'''
 for sentence in train_text:
     train_text_toc.append(tokenizer(sentence, 
                                     padding = "max_length", # if we want to pad some "zeroes" to make all sentences of equal length
@@ -52,6 +53,18 @@ for sentence in test_text:
 # 1. tokenized words + some "zeroes" to make the length constant
 # 2. sentence number - we have here mostly just zeroes as we have usually just one sentence
 # 3. info if a word is a real word or just padded "zero"
+
+class myDataset(Dataset):
+    def __init__(self, list_of_tokenized_text):
+        self.labels = [0, 1]
+        self.texts = list_of_tokenized_text
+
+    def __getitem__(self, idx):
+        return self.labels[idx]
+
+
+'''
+
     
 # and now load train data to a DataLoader
 
