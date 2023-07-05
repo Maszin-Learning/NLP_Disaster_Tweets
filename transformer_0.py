@@ -316,7 +316,7 @@ def train(model, net, train_data, test_data, learning_rate, epochs, device, batc
     train, test = Dataset(train_data), Dataset(test_data)
     train_dataloader = torch.utils.data.DataLoader(train, batch_size=batch_size, shuffle=True)
     test_dataloader = torch.utils.data.DataLoader(test, batch_size=batch_size)
-
+    print('passed setup')
     criterion = nn.CrossEntropyLoss()
     optimizer = Adam(model.parameters(), lr = learning_rate)
 
@@ -335,8 +335,8 @@ def train(model, net, train_data, test_data, learning_rate, epochs, device, batc
                 input = input.to(device)
 
                 #print(output[0].shape)
-                print(input[0].shape)
-                input = input[0]
+                print(input.shape)
+                input = input
                 print(input.shape)
                 print(input[:,:-1].shape)
 
@@ -389,8 +389,8 @@ class NET(nn.Module):
         # super function. It inherits from nn.Module and we can access everything in nn.Module
         super(NET,self).__init__()
         # Linear function.
-        self.linear_0 = nn.Linear(input_size,10000)
-        self.linear_1 = nn.Linear(10000, 1000)
+        self.linear_0 = nn.Linear(input_size,1000)
+        self.linear_1 = nn.Linear(1000, 1000)
         self.linear_2 = nn.Linear(1000,output_size)
         # dropout layer
         self.dropout = nn.Dropout(dropout)
@@ -398,7 +398,7 @@ class NET(nn.Module):
 
     def forward(self, x):
         x = self.linear_0(x)
-        x = self.dropout(x)
+        #x = self.dropout(x)
         x = self.linear_1(x)
         x = self.linear_2(x)
         final_layer = self.relu(x)
@@ -427,29 +427,64 @@ if __name__ == "__main__":
     
     #data
     dataset = Dataset(df_train)
-    x = dataset[0][0]
-    y = dataset[0][1]
+    x = dataset[3][0]
+    y = dataset[3][1]
     
-    print(x.shape)
+    print('x_shape',x.shape)
     print(x[:,:-1].shape)
     #print(y.shape)
     
     #hyperparameters
     src_pad_idx = 0
     trg_pad_idx = 0
-    src_vocab_size = 5000
-    trg_vocab_size = 5000
+    src_vocab_size = 40000
+    trg_vocab_size = 40000
     #dodac długośc tych słowników/zdań wszystkich itd
-    
+    train, test = Dataset(df_train), Dataset(df_test)
+    train_dataloader = torch.utils.data.DataLoader(train, batch_size=10, shuffle=True)
     #model
     model = Transformer(src_vocab_size, trg_vocab_size, src_pad_idx, trg_pad_idx, device=device)
-    net = NET(55000,1)
-    out = model(x, x[:,:-1])
-    net_output=net(torch.flatten(out))
-    print('TEST COMPLETED')
+    net = NET(src_vocab_size*11,1)
+    element = next(iter(train_dataloader))
+    x_z = element[0]
+    y_z = element[1]
+    
+    print('x_z shape',x_z.shape)
+    
+    #test 1
+    try:
+        out = model(x, x[:,:-1])
+        print(torch.flatten(out).shape)
+        print("PASSED TRANSFORMER TEST 1")
+        net_output=net(torch.flatten(out))
+        print('TEST 1 COMPLETED')
+    except:
+        print('TEST 1 FAILED')
+        out = model(x, x[:,:-1])
+        print("PASSED TRANSFORMER TEST 1")
+        print(torch.flatten(out).shape)
+        net_output=net(torch.flatten(out))
+        
+"""    
+    #test 2
+    try:
+        out = model(x_z, x_z[:,:-1])
+        print("PASSED TRANSFORMER TEST 2")
+        print(torch.flatten(out).shape)
+        net_output=net(torch.flatten(out))
+        print('TEST 2 COMPLETED')
+    except:
+        print('TEST 2 FAILED')
+        out = model(x_z, x_z[:,:-1])
+        print("PASSED TRANSFORMER TEST 2")
+        print(torch.flatten(out).shape)
+        net_output=net(torch.flatten(out))
+        
+"""
+
     
     
-    train(model=model, net=net, train_data=df_train, test_data=df_test, learning_rate=1e-5, epochs=1, device=device, batch_size=1)
+train(model=model, net=net, train_data=df_train, test_data=df_test, learning_rate=1e-5, epochs=1, device=device, batch_size=1)
 
 
 
