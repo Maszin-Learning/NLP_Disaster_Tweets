@@ -312,7 +312,7 @@ def set_up():
 #dodać learning loop
 def train(model, net, train_data, test_data, learning_rate, epochs, device, batch_size):
 
-    device = set_up()
+    #device = set_up()
     train, test = Dataset(train_data), Dataset(test_data)
     train_dataloader = torch.utils.data.DataLoader(train, batch_size=batch_size, shuffle=True)
     test_dataloader = torch.utils.data.DataLoader(test, batch_size=batch_size)
@@ -334,9 +334,16 @@ def train(model, net, train_data, test_data, learning_rate, epochs, device, batc
                 output = output.to(device)
                 input = input.to(device)
 
+                #print(output[0].shape)
+                print(input[0].shape)
+                input = input[0]
+                print(input.shape)
+                print(input[:,:-1].shape)
+
                 # throw input into model
                 output = model(input, input[:, :-1])
-                net_output=net(torch.flatten(output))
+                print('wors')
+                #net_output=net(torch.flatten(output))
                 batch_loss = criterion(net_output, output.long())
 
                 # calculate accuracy
@@ -400,7 +407,7 @@ class NET(nn.Module):
 #dodać eval loop
 if __name__ == "__main__":
     
-    device = set_up()
+    #device = set_up()
     device = torch.device('cpu') #temporary use cpu
     tokenizer = BertTokenizer.from_pretrained('bert-base-cased')
     
@@ -422,7 +429,10 @@ if __name__ == "__main__":
     dataset = Dataset(df_train)
     x = dataset[0][0]
     y = dataset[0][1]
-    x = dataset[0][0]
+    
+    print(x.shape)
+    print(x[:,:-1].shape)
+    #print(y.shape)
     
     #hyperparameters
     src_pad_idx = 0
