@@ -417,29 +417,26 @@ if __name__ == "__main__":
                                     [int(.8*len(sample)), int(.9*len(sample))])
     print(len(df_train),len(df_val), len(df_test))
     
-    
     #data
     dataset = Dataset(df_train)
-    x = dataset[0][0]
-    y = dataset[0][1]
-    x = dataset[0][0]
-    
+
+    x = dataset[753][0]
+    y = dataset[753][1]
+    print(dataset[0])
+    print(dataset[10])
     #hyperparameters
     src_pad_idx = 0
     trg_pad_idx = 0
-    src_vocab_size = 5000
-    trg_vocab_size = 5000
+    src_vocab_size = 30522
+    trg_vocab_size = 30522
     #dodac długośc tych słowników/zdań wszystkich itd
     
     #model
     model = Transformer(src_vocab_size, trg_vocab_size, src_pad_idx, trg_pad_idx, device=device)
-    net = NET(55000,1)
+    net = NET(src_vocab_size*11,1)
     out = model(x, x[:,:-1])
+    print("TEST1")
     net_output=net(torch.flatten(out))
-    print('TEST COMPLETED')
-    
+    print('\nTEST COMPLETED\n')
     
     train(model=model, net=net, train_data=df_train, test_data=df_test, learning_rate=1e-5, epochs=1, device=device, batch_size=1)
-
-
-
